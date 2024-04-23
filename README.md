@@ -21,4 +21,5 @@ python main.py
 ```
 # 效果展示
 拥有多个自定义控件 可以调整颜色、宽度、置信度和模型，并且有RGB渐变样式。
-![image](https://github.com/TheD0ubleC/TensorflowDraw/assets/143760576/3d18760d-dbc2-4445-97ea-990825ea1041)
+![image](https://github.com/TheD0ubleC/TensorflowDraw/assets/143760576/284d5e23-0edf-4be6-9db7-49472196c41b)
+
