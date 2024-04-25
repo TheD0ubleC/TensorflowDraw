@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 import math
 import time
+import random
 def set_theme(root):
     style = ttk.Style(root)
     style.theme_use('clam')
@@ -77,6 +78,8 @@ def detect_objects(frame, threshold, red, green, blue, width, dynamic_color):
             draw.rectangle([(left, top), (right, bottom)], outline=color, width=border_width)
             label = LABEL_MAP.get(classes[i], '未知')
             draw.text((left, top - 30), f"{label}: {int(scores[i] * 100)}%", fill=color, font=font)
+    update_prank(frame.shape, red, green, blue, width)
+    draw_prank(draw, frame.shape)
     return ImageTk.PhotoImage(image)
 def main():
     global red_slider, green_slider, blue_slider, threshold_slider, width_slider
@@ -156,6 +159,62 @@ def create_control_widgets(settings_frame):
     model_combobox.grid(column=1, row=5, sticky=(tk.W, tk.E))
     model_combobox.current(0)
     model_combobox.bind("<<ComboboxSelected>>", lambda event: load_model(model_combobox.get()))
+    toggle_prank_button = ttk.Button(settings_frame, text="恶作剧开关", command=toggle_prank)
+    toggle_prank_button.grid(column=0, row=7, sticky=(tk.W, tk.E))
+prank_active = False
+prank_box = None
+prank_label = "未知生物"
+prank_timer = 0
+def toggle_prank():
+    global prank_active
+    prank_active = not prank_active
+def update_prank(frame_shape, red_value, green_value, blue_value, border_width):
+    global prank_box, prank_timer, prank_color, prank_confidence, prank_width
+    if prank_active:
+        if prank_timer <= 0:
+            move_x = random.randint(-20, 20)
+            move_y = random.randint(-20, 20)
+            adjust_width = random.randint(-20, 20)
+            adjust_height = random.randint(-20, 20)
+            min_width = 50 
+            min_height = 50 
+            if prank_box is None:
+                x = random.randint(100, frame_shape[1] - 200)
+                y = random.randint(100, frame_shape[0] - 200)
+                width = max(min_width, random.randint(100, 200))
+                height = max(min_height, random.randint(100, 200))
+                prank_box = [y / frame_shape[0], x / frame_shape[1], (y + height) / frame_shape[0], (x + width) / frame_shape[1]]
+            else:
+                y_min, x_min, y_max, x_max = prank_box
+                new_y_min = max(0, y_min + move_y / frame_shape[0])
+                new_x_min = max(0, x_min + move_x / frame_shape[1])
+                new_y_max = min(1, y_max + (move_y + adjust_height) / frame_shape[0])
+                new_x_max = min(1, x_max + (move_x + adjust_width) / frame_shape[1])
+                if (new_x_max - new_x_min) * frame_shape[1] < min_width:
+                    new_x_max = new_x_min + min_width / frame_shape[1]
+                if (new_y_max - new_y_min) * frame_shape[0] < min_height:
+                    new_y_max = new_y_min + min_height / frame_shape[0]
+                prank_box = [new_y_min, new_x_min, new_y_max, new_x_max]
+
+            prank_color = (int(red_value), int(green_value), int(blue_value))
+            prank_width = border_width
+            prank_confidence = random.randint(55, 89)
+            prank_timer = random.randint(1, 5)
+        else:
+            prank_timer -= 1
+    else:
+        prank_box = None
+def draw_prank(draw, frame_shape):
+    if prank_box and prank_active:
+        ymin, xmin, ymax, xmax = prank_box
+        jitter_x = random.randint(-5, 5)
+        jitter_y = random.randint(-5, 5)
+        left = min(xmin * frame_shape[1] + jitter_x, xmax * frame_shape[1] + jitter_x)
+        right = max(xmin * frame_shape[1] + jitter_x, xmax * frame_shape[1] + jitter_x)
+        top = min(ymin * frame_shape[0] + jitter_y, ymax * frame_shape[0] + jitter_y)
+        bottom = max(ymin * frame_shape[0] + jitter_y, ymax * frame_shape[0] + jitter_y)
+        draw.rectangle([(left, top), (right, bottom)], outline=prank_color, width=prank_width)
+        draw.text((left, top - 30), f"{prank_label}: {prank_confidence}%", fill=prank_color, font=font)
 def setup_camera_and_model(video_label):
     global cap
     if cap is None:
